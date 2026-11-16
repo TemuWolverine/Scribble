@@ -13,17 +13,23 @@
         <Grid RowDefinitions="Auto,*,Auto">
             <!-- Top Floating Utility & Mode Pills -->
             <Grid Grid.Row="0"
-                  ColumnDefinitions="*,Auto"
+                  ColumnDefinitions="Auto,*"
                   Margin="16,14,16,4"
                   ColumnSpacing="12">
                 <Border Grid.Column="0"
                         Classes="m3FloatingPill"
                         HorizontalAlignment="Left">
-                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,12,2">
-                            <Button Content="Undo" Classes="m3ToolbarBtn" Command="{Binding UndoCommand}" />
-                            <Button Content="Redo" Classes="m3ToolbarBtn" Command="{Binding RedoCommand}" />
-                            <Button Content="Clear" Classes="m3ToolbarBtn" Command="{Binding ClearCanvasCommand}" />
+                            <Button Classes="m3IconBtn" Command="{Binding UndoCommand}" ToolTip.Tip="Undo (Ctrl+Z)">
+                                <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconUndo}" />
+                            </Button>
+                            <Button Classes="m3IconBtn" Command="{Binding RedoCommand}" ToolTip.Tip="Redo (Ctrl+Y)">
+                                <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconRedo}" />
+                            </Button>
+                            <Button Classes="m3IconBtn" Command="{Binding ClearCanvasCommand}" ToolTip.Tip="Clear canvas">
+                                <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconClear}" />
+                            </Button>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,2,12,2">
@@ -52,20 +58,44 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center">
-                            <Button Content="Open" Classes="m3ToolbarBtn" Click="OnOpenClicked" />
-                            <Button Content="Save" Classes="m3ToolbarBtn" Click="OnSaveClicked" />
-                            <Button Content="Ref Image" Classes="m3ToolbarBtn" Click="OnLoadReferenceImageClicked" ToolTip.Tip="Load a reference image file under the drawing (or press Ctrl+V to paste)" />
-                            <Button Content="Clear Ref" Classes="m3ToolbarBtn" Command="{Binding ClearReferenceImageCommand}" IsVisible="{Binding HasReferenceImage}" />
+                            <Button Classes="m3IconBtn" Click="OnOpenClicked" ToolTip.Tip="Open .scribble file">
+                                <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconOpen}" />
+                            </Button>
+                            <Button Classes="m3IconBtn" Click="OnSaveClicked" ToolTip.Tip="Save .scribble file">
+                                <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconSave}" />
+                            </Button>
+                            <Button Classes="m3ToolbarBtn" Click="OnLoadReferenceImageClicked" ToolTip.Tip="Load a reference image file under the drawing (or press Ctrl+V to paste)">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Classes="m3BtnIcon" Data="{StaticResource IconImage}" />
+                                    <TextBlock Text="Ref Image" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="m3ToolbarBtn"
+                                    Command="{Binding GrabResolveFrameCommand}"
+                                    ToolTip.Tip="Grab the frame at the current playhead in DaVinci Resolve and set it as the canvas background">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Classes="m3BtnIcon" Data="{StaticResource IconResolveFrame}" />
+                                    <TextBlock Text="Grab Frame" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="m3ToolbarBtn" Command="{Binding ClearReferenceImageCommand}" IsVisible="{Binding HasReferenceImage}" ToolTip.Tip="Remove reference image">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Classes="m3BtnIcon" Data="{StaticResource IconClose}" />
+                                    <TextBlock Text="Clear Ref" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                    </WrapPanel>
+                    </StackPanel>
                 </Border>
 
                 <!-- Active Mode & Status Pill -->
                 <Border Grid.Column="1"
                         Classes="m3FloatingPill"
+                        HorizontalAlignment="Right"
                         VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <Border Background="{StaticResource M3SecondaryContainerBrush}"
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
+                        <Border Grid.Column="0"
+                                Background="{StaticResource M3SecondaryContainerBrush}"
                                 CornerRadius="14"
                                 Padding="10,4">
                             <TextBlock Text="{Binding ActiveModeLabel}"
@@ -73,13 +103,15 @@
                                        FontSize="12"
                                        FontWeight="Bold" />
                         </Border>
-                        <TextBlock Text="{Binding StatusText}"
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding StatusText}"
+                                   ToolTip.Tip="{Binding StatusText}"
                                    Foreground="{StaticResource M3OnSurfaceVariantBrush}"
                                    FontSize="12"
                                    VerticalAlignment="Center"
                                    MaxWidth="320"
                                    TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
 
@@ -109,22 +141,36 @@
                     <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Connected Mode Button Group (Pen | Eraser) -->
                         <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,2,10,2" VerticalAlignment="Center">
-                            <Button Content="Pen"
-                                    Classes="m3ConnectedLeft"
+                            <Button Classes="m3ConnectedLeft"
                                     Classes.active="{Binding IsPenMode}"
-                                    Command="{Binding TogglePenToolCommand}" />
-                            <Button Content="Eraser"
-                                    Classes="m3ConnectedRight"
+                                    Command="{Binding TogglePenToolCommand}"
+                                    ToolTip.Tip="Draw with pen">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Classes="m3BtnIcon" Data="{StaticResource IconPen}" />
+                                    <TextBlock Text="Pen" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="m3ConnectedRight"
                                     Classes.active="{Binding IsEraserMode}"
-                                    Command="{Binding ToggleEraserToolCommand}" />
+                                    Command="{Binding ToggleEraserToolCommand}"
+                                    ToolTip.Tip="Erase strokes">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <PathIcon Classes="m3BtnIcon" Data="{StaticResource IconEraser}" />
+                                    <TextBlock Text="Eraser" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
 
                         <!-- Palm Rejection Modifier -->
-                        <ToggleButton Content="Pen only"
-                                      Classes="m3PalmToggle"
+                        <ToggleButton Classes="m3PalmToggle"
                                       IsChecked="{Binding PenOnlyMode}"
                                       Margin="0,2,12,2"
-                                      ToolTip.Tip="Ignore finger/palm touch so only stylus (or mouse) draws" />
+                                      ToolTip.Tip="Ignore finger/palm touch so only stylus (or mouse) draws">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PathIcon Classes="m3BtnIcon" Data="{StaticResource IconStylus}" />
+                                <TextBlock Text="Pen only" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ToggleButton>
 
                         <!-- Color Swatches (44x44dp hit target, tap to select, long-press to customize) -->
                         <ItemsControl ItemsSource="{Binding Palette}" Margin="0,0,12,0" VerticalAlignment="Center">
@@ -161,8 +207,15 @@
 
                         <!-- Write-On Playback Controls -->
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,2,0,2">
-                            <Button Content="Play / Pause" Classes="m3ToolbarBtn" Command="{Binding TogglePlayCommand}" />
-                            <Button Content="Stop" Classes="m3ToolbarBtn" Command="{Binding StopPlaybackCommand}" />
+                            <Button Classes="m3IconBtn" Command="{Binding TogglePlayCommand}" ToolTip.Tip="Play / Pause preview">
+                                <Panel>
+                                    <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconPlay}" IsVisible="{Binding !IsPlaying}" />
+                                    <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconPause}" IsVisible="{Binding IsPlaying}" />
+                                </Panel>
+                            </Button>
+                            <Button Classes="m3IconBtn" Command="{Binding StopPlaybackCommand}" ToolTip.Tip="Stop preview">
+                                <PathIcon Classes="m3ActionIcon" Data="{StaticResource IconStop}" />
+                            </Button>
                             <Slider Minimum="0"
                                     Maximum="{Binding TotalDurationMs}"
                                     Value="{Binding PlaybackTimeMs}"
@@ -173,13 +226,30 @@
                     </WrapPanel>
                 </Border>
 
-                <!-- Primary High-Emphasis Action: Extended FAB -->
-                <Button Grid.Column="1"
-                        Content="Export Resolve"
-                        Classes="m3ExtendedFab"
-                        Click="OnExportFusionClicked"
-                        VerticalAlignment="Center"
-                        ToolTip.Tip="Export animated vector .setting for DaVinci Resolve Fusion" />
+                <!-- Primary High-Emphasis Actions: Inject into Resolve + Export .setting -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <Button Classes="m3ExtendedFab"
+                            Command="{Binding InjectIntoResolveCommand}"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Inject animated Fusion composition into DaVinci Resolve on the next free track above the playhead">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <PathIcon Classes="m3FabIcon" Data="{StaticResource IconSendToResolve}" />
+                            <TextBlock Text="Inject Resolve" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="m3SecondaryFab"
+                            Click="OnExportFusionClicked"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Export animated vector .setting file for DaVinci Resolve Fusion">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <PathIcon Classes="m3FabIcon" Data="{StaticResource IconMovie}" />
+                            <TextBlock Text="Export .setting" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Grid>
 

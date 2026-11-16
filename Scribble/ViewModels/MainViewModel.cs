@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Scribble.Core.Export;
+using Scribble.Core.Integration;
 using Scribble.Core.Models;
 using Scribble.Core.Processing;
 using Scribble.Core.Serialization;
@@ -129,7 +132,17 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial double ReferenceOpacity { get; set; } = 0.55;
 
+    [ObservableProperty]
+    public partial bool IsGrabbingResolveFrame { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsInjectingIntoResolve { get; set; }
+
     public bool HasReferenceImage => ReferenceImage is not null;
+
+    public bool CanGrabResolveFrame => !IsGrabbingResolveFrame;
+
+    public bool CanInjectIntoResolve => !IsInjectingIntoResolve;
 
     public bool IsPenMode => !IsEraserMode;
 
@@ -224,6 +237,82 @@ public partial class MainViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(HasReferenceImage));
         CanvasInvalidated?.Invoke();
+    }
+
+    partial void OnIsGrabbingResolveFrameChanged(bool value)
+    {
+        GrabResolveFrameCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsInjectingIntoResolveChanged(bool value)
+    {
+        InjectIntoResolveCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanInjectIntoResolve))]
+    private async Task InjectIntoResolveAsync()
+    {
+        if (Document.Strokes.Count == 0)
+        {
+            StatusText = "Draw something on the canvas before injecting into Resolve.";
+            return;
+        }
+
+        IsInjectingIntoResolve = true;
+        StatusText = "Injecting Fusion composition into DaVinci Resolve...";
+        try
+        {
+            string compContent = BuildFusionComposition();
+            int requiredFrames = CalculateRequiredFusionFrames();
+            var result = await DaVinciResolveFrameGrabber.InjectFusionCompositionAsync(compContent, requiredFrames);
+            if (!result.Success)
+            {
+                StatusText = result.Error ?? "Failed to inject Fusion composition into DaVinci Resolve.";
+                return;
+            }
+
+            string tcPart = !string.IsNullOrWhiteSpace(result.Timecode) ? $" @ {result.Timecode}" : string.Empty;
+            StatusText = $"Injected into Resolve on Video {result.TrackIndex}{tcPart}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Resolve inject error: {ex.Message}";
+        }
+        finally
+        {
+            IsInjectingIntoResolve = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGrabResolveFrame))]
+    private async Task GrabResolveFrameAsync()
+    {
+        IsGrabbingResolveFrame = true;
+        StatusText = "Grabbing frame from DaVinci Resolve...";
+        try
+        {
+            var result = await DaVinciResolveFrameGrabber.GrabCurrentFrameAsync();
+            if (!result.Success || result.ImageBytes is not { Length: > 0 })
+            {
+                StatusText = result.Error ?? "Failed to grab frame from DaVinci Resolve.";
+                return;
+            }
+
+            using var stream = new MemoryStream(result.ImageBytes);
+            ReferenceImage = new Bitmap(stream);
+
+            string tcPart = !string.IsNullOrWhiteSpace(result.Timecode) ? $" @ {result.Timecode}" : string.Empty;
+            string tlPart = !string.IsNullOrWhiteSpace(result.TimelineName) ? $" ({result.TimelineName})" : string.Empty;
+            StatusText = $"Set background to Resolve frame{tcPart}{tlPart}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Resolve frame grab error: {ex.Message}";
+        }
+        finally
+        {
+            IsGrabbingResolveFrame = false;
+        }
     }
 
     [RelayCommand]
@@ -492,13 +581,18 @@ public partial class MainViewModel : ViewModelBase
         CanvasInvalidated?.Invoke();
     }
 
-    public string BuildFusionSetting()
-    {
-        var options = new FusionExportOptions(
-            CompressIdleGaps: CompressIdleGaps,
-            SpeedMultiplier: SelectedSpeed.Multiplier);
-        return FusionSettingExporter.Export(Document, options);
-    }
+    private FusionExportOptions CreateFusionExportOptions() => new(
+        CompressIdleGaps: CompressIdleGaps,
+        SpeedMultiplier: SelectedSpeed.Multiplier);
+
+    public string BuildFusionSetting() =>
+        FusionSettingExporter.Export(Document, CreateFusionExportOptions());
+
+    public string BuildFusionComposition() =>
+        FusionSettingExporter.ExportComposition(Document, CreateFusionExportOptions());
+
+    public int CalculateRequiredFusionFrames() =>
+        FusionSettingExporter.CalculateRequiredFrames(Document, CreateFusionExportOptions());
 
     public string SerializeProject() => DocumentSerializer.Serialize(Document);
 

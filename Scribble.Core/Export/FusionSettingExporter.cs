@@ -29,43 +29,22 @@ public static class FusionSettingExporter
         return (fx, fy);
     }
 
+    public static int CalculateRequiredFrames(DrawingDocument document, FusionExportOptions? options = null)
+    {
+        options ??= new FusionExportOptions();
+        var strokes = GetPreparedStrokes(document, options);
+        return CalculateRequiredFrames(document, strokes, options);
+    }
+
     public static string Export(DrawingDocument document, FusionExportOptions? options = null)
     {
         options ??= new FusionExportOptions();
-
-        IReadOnlyList<Stroke> strokes = options.CompressIdleGaps
-            ? StrokeSmoother.CompressIdleGaps(document.Strokes, options.MaxIdleGapMs)
-            : document.Strokes.Where(s => s.Points.Count > 0).ToList();
+        var strokes = GetPreparedStrokes(document, options);
 
         var sb = new StringBuilder(8192);
-        string finalOutputNode = strokes.Count == 0 ? "CanvasBg" : $"StrokeMerge_{strokes.Count}";
-
         sb.AppendLine("{");
         sb.AppendLine("\tTools = ordered() {");
-        sb.AppendLine("\t\tScribbleAnimation = GroupOperator {");
-        sb.AppendLine("\t\t\tOutputs = {");
-        sb.AppendLine("\t\t\t\tMainOutput1 = InstanceOutput {");
-        sb.AppendLine($"\t\t\t\t\tSourceOp = \"{finalOutputNode}\",");
-        sb.AppendLine("\t\t\t\t\tSource = \"Output\",");
-        sb.AppendLine("\t\t\t\t},");
-        sb.AppendLine("\t\t\t},");
-        sb.AppendLine("\t\t\tViewInfo = GroupInfo { Pos = { 0, 0 } },");
-        sb.AppendLine("\t\t\tTools = ordered() {");
-
-        // Transparent base canvas
-        AppendCanvasBackground(sb, document.Width, document.Height);
-
-        string previousMergeOutput = "CanvasBg";
-        for (int i = 0; i < strokes.Count; i++)
-        {
-            int idx = i + 1;
-            var stroke = strokes[i];
-            AppendStrokePipeline(sb, idx, stroke, document, options, previousMergeOutput);
-            previousMergeOutput = $"StrokeMerge_{idx}";
-        }
-
-        sb.AppendLine("\t\t\t},");
-        sb.AppendLine("\t\t},");
+        AppendScribbleGroup(sb, document, strokes, options, indentTabs: 2, globalOut: null);
         sb.AppendLine("\t},");
         sb.AppendLine("\tActiveTool = \"ScribbleAnimation\"");
         sb.AppendLine("}");
@@ -73,10 +52,131 @@ public static class FusionSettingExporter
         return sb.ToString();
     }
 
-    private static void AppendCanvasBackground(StringBuilder sb, int width, int height)
+    /// <summary>
+    /// Exports a <see cref="DrawingDocument"/> wrapped inside a full DaVinci Resolve Fusion
+    /// <c>Composition { ... }</c> (.comp) with <c>MediaOut1</c> wired to the animated stroke output.
+    /// </summary>
+    public static string ExportComposition(DrawingDocument document, FusionExportOptions? options = null)
+    {
+        options ??= new FusionExportOptions();
+        var strokes = GetPreparedStrokes(document, options);
+        int requiredFrames = CalculateRequiredFrames(document, strokes, options);
+        int globalEnd = Math.Max(1, requiredFrames - 1);
+        string finalOutputNode = strokes.Count == 0 ? "CanvasBg" : $"StrokeMerge_{strokes.Count}";
+
+        var sb = new StringBuilder(8192);
+        sb.AppendLine("Composition {");
+        sb.AppendLine("\tCurrentTime = 0,");
+        sb.AppendLine($"\tRenderRange = {{ 0, {globalEnd} }},");
+        sb.AppendLine($"\tGlobalRange = {{ 0, {globalEnd} }},");
+        sb.AppendLine("\tHiQ = true,");
+        sb.AppendLine("\tPlaybackUpdateMode = 0,");
+        sb.AppendLine("\tStereoMode = false,");
+        sb.AppendLine("\tCustomData = { TEMPLATE_ID = \"Fusion Generator\" },");
+        sb.AppendLine("\tTools = {");
+        sb.AppendLine("\t\tMediaOut1 = Saver {");
+        sb.AppendLine("\t\t\tInputs = {");
+        sb.AppendLine("\t\t\t\tIndex = Input { Value = \"0\", },");
+        sb.AppendLine("\t\t\t\tInput = Input {");
+        sb.AppendLine($"\t\t\t\t\tSourceOp = \"{finalOutputNode}\",");
+        sb.AppendLine("\t\t\t\t\tSource = \"Output\",");
+        sb.AppendLine("\t\t\t\t},");
+        sb.AppendLine("\t\t\t},");
+        sb.AppendLine("\t\t\tViewInfo = OperatorInfo { Pos = { 440, 49.5 } },");
+        sb.AppendLine("\t\t},");
+        AppendScribbleGroup(sb, document, strokes, options, indentTabs: 2, globalOut: globalEnd);
+        sb.AppendLine("\t},");
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private static IReadOnlyList<Stroke> GetPreparedStrokes(DrawingDocument document, FusionExportOptions options) =>
+        options.CompressIdleGaps
+            ? StrokeSmoother.CompressIdleGaps(document.Strokes, options.MaxIdleGapMs)
+            : document.Strokes.Where(s => s.Points.Count > 0).ToList();
+
+    private static int CalculateRequiredFrames(
+        DrawingDocument document,
+        IReadOnlyList<Stroke> strokes,
+        FusionExportOptions options)
+    {
+        double speed = Math.Max(0.1, options.SpeedMultiplier);
+        int maxEndFrame = 0;
+
+        foreach (var stroke in strokes)
+        {
+            var (startFrame, endFrame) = ComputeStrokeFrameRange(stroke, document.FrameRate, speed, options.MinStrokeFrames);
+            if (endFrame > maxEndFrame)
+            {
+                maxEndFrame = endFrame;
+            }
+        }
+
+        int fps = Math.Max(1, document.FrameRate);
+        return Math.Max(fps * 5, maxEndFrame + fps);
+    }
+
+    private static (int StartFrame, int EndFrame) ComputeStrokeFrameRange(
+        Stroke stroke,
+        int frameRate,
+        double speed,
+        int minStrokeFrames)
+    {
+        int startFrame = WriteOnTimeline.TimeMsToFrame(stroke.StartTimeMs / speed, frameRate);
+        int endFrame = WriteOnTimeline.TimeMsToFrame(stroke.EndTimeMs / speed, frameRate);
+        if (endFrame <= startFrame)
+        {
+            endFrame = startFrame + Math.Max(1, minStrokeFrames);
+        }
+        return (startFrame, endFrame);
+    }
+
+    private static void AppendScribbleGroup(
+        StringBuilder sb,
+        DrawingDocument document,
+        IReadOnlyList<Stroke> strokes,
+        FusionExportOptions options,
+        int indentTabs,
+        int? globalOut)
+    {
+        string indent = new('\t', indentTabs);
+        string finalOutputNode = strokes.Count == 0 ? "CanvasBg" : $"StrokeMerge_{strokes.Count}";
+
+        sb.AppendLine($"{indent}ScribbleAnimation = GroupOperator {{");
+        sb.AppendLine($"{indent}\tOutputs = {{");
+        sb.AppendLine($"{indent}\t\tMainOutput1 = InstanceOutput {{");
+        sb.AppendLine($"{indent}\t\t\tSourceOp = \"{finalOutputNode}\",");
+        sb.AppendLine($"{indent}\t\t\tSource = \"Output\",");
+        sb.AppendLine($"{indent}\t\t}},");
+        sb.AppendLine($"{indent}\t}},");
+        sb.AppendLine($"{indent}\tViewInfo = GroupInfo {{ Pos = {{ 230, 49.5 }} }},");
+        sb.AppendLine($"{indent}\tTools = ordered() {{");
+
+        // Transparent base canvas
+        AppendCanvasBackground(sb, document.Width, document.Height, globalOut);
+
+        string previousMergeOutput = "CanvasBg";
+        for (int i = 0; i < strokes.Count; i++)
+        {
+            int idx = i + 1;
+            var stroke = strokes[i];
+            AppendStrokePipeline(sb, idx, stroke, document, options, previousMergeOutput, globalOut);
+            previousMergeOutput = $"StrokeMerge_{idx}";
+        }
+
+        sb.AppendLine($"{indent}\t}},");
+        sb.AppendLine($"{indent}}},");
+    }
+
+    private static void AppendCanvasBackground(StringBuilder sb, int width, int height, int? globalOut)
     {
         sb.AppendLine("\t\t\t\tCanvasBg = Background {");
         sb.AppendLine("\t\t\t\t\tInputs = {");
+        if (globalOut.HasValue)
+        {
+            sb.AppendLine($"\t\t\t\t\t\tGlobalOut = Input {{ Value = {globalOut.Value}, }},");
+        }
         sb.AppendLine($"\t\t\t\t\t\tWidth = Input {{ Value = {width}, }},");
         sb.AppendLine($"\t\t\t\t\t\tHeight = Input {{ Value = {height}, }},");
         sb.AppendLine("\t\t\t\t\t\t[\"Gamut.SLogVersion\"] = Input { Value = FuID { \"SLog2\" }, },");
@@ -92,7 +192,8 @@ public static class FusionSettingExporter
         Stroke stroke,
         DrawingDocument doc,
         FusionExportOptions options,
-        string previousOutputNode)
+        string previousOutputNode,
+        int? globalOut)
     {
         var simplified = StrokeSmoother.SimplifyRdp(stroke.Points, options.SimplifyEpsilon);
         var fusionPoints = new List<(double X, double Y)>(simplified.Count);
@@ -111,12 +212,7 @@ public static class FusionSettingExporter
         var bezier = StrokeSmoother.FitBezierCurve(fusionPoints);
 
         double speed = Math.Max(0.1, options.SpeedMultiplier);
-        int startFrame = WriteOnTimeline.TimeMsToFrame(stroke.StartTimeMs / speed, doc.FrameRate);
-        int endFrame = WriteOnTimeline.TimeMsToFrame(stroke.EndTimeMs / speed, doc.FrameRate);
-        if (endFrame <= startFrame)
-        {
-            endFrame = startFrame + Math.Max(1, options.MinStrokeFrames);
-        }
+        var (startFrame, endFrame) = ComputeStrokeFrameRange(stroke, doc.FrameRate, speed, options.MinStrokeFrames);
 
         double effectiveWidthPx = stroke.BaseWidth * stroke.AveragePressure;
         double borderWidth = Math.Max(0.0005, effectiveWidthPx / doc.Width);
@@ -166,6 +262,10 @@ public static class FusionSettingExporter
         var (r, g, b, a) = stroke.Color.ToNormalized();
         sb.AppendLine($"\t\t\t\tStrokeBg_{idx} = Background {{");
         sb.AppendLine("\t\t\t\t\tInputs = {");
+        if (globalOut.HasValue)
+        {
+            sb.AppendLine($"\t\t\t\t\t\tGlobalOut = Input {{ Value = {globalOut.Value}, }},");
+        }
         sb.AppendLine($"\t\t\t\t\t\tWidth = Input {{ Value = {doc.Width}, }},");
         sb.AppendLine($"\t\t\t\t\t\tHeight = Input {{ Value = {doc.Height}, }},");
         sb.AppendLine("\t\t\t\t\t\t[\"Gamut.SLogVersion\"] = Input { Value = FuID { \"SLog2\" }, },");
