@@ -1,0 +1,245 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Styles.Resources>
+        <!-- M3 Expressive Dark Tone-Based Surface & Color Roles -->
+        <Color x:Key="M3SurfaceColor">#121318</Color>
+        <Color x:Key="M3SurfaceContainerColor">#1E2028</Color>
+        <Color x:Key="M3SurfaceContainerHighColor">#282A34</Color>
+        <Color x:Key="M3SurfaceContainerHighestColor">#333541</Color>
+        <Color x:Key="M3OnSurfaceColor">#E3E2E9</Color>
+        <Color x:Key="M3OnSurfaceVariantColor">#C4C6D0</Color>
+
+        <Color x:Key="M3PrimaryColor">#A8C7FA</Color>
+        <Color x:Key="M3OnPrimaryColor">#062E6F</Color>
+        <Color x:Key="M3PrimaryContainerColor">#0842A0</Color>
+        <Color x:Key="M3OnPrimaryContainerColor">#D3E3FD</Color>
+
+        <Color x:Key="M3SecondaryContainerColor">#3B4858</Color>
+        <Color x:Key="M3OnSecondaryContainerColor">#D7E3F7</Color>
+
+        <Color x:Key="M3TertiaryContainerColor">#14534B</Color>
+        <Color x:Key="M3OnTertiaryContainerColor">#9EF2E4</Color>
+
+        <Color x:Key="M3OutlineColor">#8E9099</Color>
+        <Color x:Key="M3OutlineVariantColor">#44474E</Color>
+
+        <SolidColorBrush x:Key="M3SurfaceBrush" Color="{StaticResource M3SurfaceColor}" />
+        <SolidColorBrush x:Key="M3SurfaceContainerBrush" Color="{StaticResource M3SurfaceContainerColor}" />
+        <SolidColorBrush x:Key="M3SurfaceContainerHighBrush" Color="{StaticResource M3SurfaceContainerHighColor}" />
+        <SolidColorBrush x:Key="M3SurfaceContainerHighestBrush" Color="{StaticResource M3SurfaceContainerHighestColor}" />
+        <SolidColorBrush x:Key="M3OnSurfaceBrush" Color="{StaticResource M3OnSurfaceColor}" />
+        <SolidColorBrush x:Key="M3OnSurfaceVariantBrush" Color="{StaticResource M3OnSurfaceVariantColor}" />
+
+        <SolidColorBrush x:Key="M3PrimaryBrush" Color="{StaticResource M3PrimaryColor}" />
+        <SolidColorBrush x:Key="M3OnPrimaryBrush" Color="{StaticResource M3OnPrimaryColor}" />
+        <SolidColorBrush x:Key="M3PrimaryContainerBrush" Color="{StaticResource M3PrimaryContainerColor}" />
+        <SolidColorBrush x:Key="M3OnPrimaryContainerBrush" Color="{StaticResource M3OnPrimaryContainerColor}" />
+
+        <SolidColorBrush x:Key="M3SecondaryContainerBrush" Color="{StaticResource M3SecondaryContainerColor}" />
+        <SolidColorBrush x:Key="M3OnSecondaryContainerBrush" Color="{StaticResource M3OnSecondaryContainerColor}" />
+
+        <SolidColorBrush x:Key="M3TertiaryContainerBrush" Color="{StaticResource M3TertiaryContainerColor}" />
+        <SolidColorBrush x:Key="M3OnTertiaryContainerBrush" Color="{StaticResource M3OnTertiaryContainerColor}" />
+
+        <SolidColorBrush x:Key="M3OutlineBrush" Color="{StaticResource M3OutlineColor}" />
+        <SolidColorBrush x:Key="M3OutlineVariantBrush" Color="{StaticResource M3OutlineVariantColor}" />
+    </Styles.Resources>
+
+    <!-- Floating Toolbar Container (64dp default height, CornerFull pill) -->
+    <Style Selector="Border.m3FloatingToolbar">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource M3OutlineVariantBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="32" />
+        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="BoxShadow" Value="0 8 24 0 #66000000" />
+    </Style>
+
+    <!-- Compact Floating Pill (top utility bar / status badge) -->
+    <Style Selector="Border.m3FloatingPill">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource M3OutlineVariantBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="24" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="BoxShadow" Value="0 4 16 0 #4D000000" />
+    </Style>
+
+    <!-- Standard Round Toolbar Button (48dp accessible hit height) -->
+    <Style Selector="Button.m3ToolbarBtn">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerHighBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnSurfaceBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                <CornerRadiusTransition Property="CornerRadius" Duration="0:0:0.22" Easing="BackEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.m3ToolbarBtn:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerHighestBrush}" />
+    </Style>
+    <Style Selector="Button.m3ToolbarBtn:pressed">
+        <Setter Property="CornerRadius" Value="12" />
+    </Style>
+
+    <!-- Connected Button Group (Pen | Eraser) -->
+    <Style Selector="Button.m3ConnectedLeft">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerHighBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnSurfaceVariantBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="20,8,8,20" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                <CornerRadiusTransition Property="CornerRadius" Duration="0:0:0.24" Easing="BackEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.m3ConnectedRight">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerHighBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnSurfaceVariantBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8,20,20,8" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" Easing="CubicEaseOut" />
+                <CornerRadiusTransition Property="CornerRadius" Duration="0:0:0.24" Easing="BackEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.m3ConnectedLeft.active, Button.m3ConnectedRight.active">
+        <Setter Property="Background" Value="{StaticResource M3SecondaryContainerBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnSecondaryContainerBrush}" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Palm Rejection Toggle Pill -->
+    <Style Selector="ToggleButton.m3PalmToggle">
+        <Setter Property="Background" Value="{StaticResource M3SurfaceContainerHighBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnSurfaceVariantBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource M3OutlineVariantBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" Easing="CubicEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ToggleButton.m3PalmToggle:checked /template/ ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource M3TertiaryContainerBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnTertiaryContainerBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.m3PalmToggle:checked">
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <!-- Extended FAB (Primary High-Emphasis Action: Export Resolve) -->
+    <Style Selector="Button.m3ExtendedFab">
+        <Setter Property="Background" Value="{StaticResource M3PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="MinHeight" Value="56" />
+        <Setter Property="Padding" Value="20,14" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <CornerRadiusTransition Property="CornerRadius" Duration="0:0:0.22" Easing="BackEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.m3ExtendedFab:pressed">
+        <Setter Property="CornerRadius" Value="28" />
+    </Style>
+
+    <!-- Dialog Buttons (Text low-emphasis + Filled high-emphasis) -->
+    <Style Selector="Button.m3TextBtn">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{StaticResource M3PrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.m3FilledBtn">
+        <Setter Property="Background" Value="{StaticResource M3PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource M3OnPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="20,8" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- Color Swatch Ring (48x48dp accessible target, optical nested circle) -->
+    <Style Selector="Border.m3SwatchTarget">
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="Padding" Value="4" />
+    </Style>
+    <Style Selector="Border.m3SwatchRing">
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="BorderBrush" Value="{StaticResource M3OutlineVariantBrush}" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.18" Easing="CubicEaseOut" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.m3SwatchRing.selected">
+        <Setter Property="BorderBrush" Value="{StaticResource M3PrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="3" />
+    </Style>
+</Styles>

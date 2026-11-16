@@ -1,0 +1,249 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Scribble.ViewModels"
+             xmlns:controls="using:Scribble.Controls"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+             x:Class="Scribble.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             Background="{StaticResource M3SurfaceBrush}">
+
+    <Grid>
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Top Floating Utility & Mode Pills -->
+            <Grid Grid.Row="0"
+                  ColumnDefinitions="*,Auto"
+                  Margin="16,14,16,4"
+                  ColumnSpacing="12">
+                <Border Grid.Column="0"
+                        Classes="m3FloatingPill"
+                        HorizontalAlignment="Left">
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,12,2">
+                            <Button Content="Undo" Classes="m3ToolbarBtn" Command="{Binding UndoCommand}" />
+                            <Button Content="Redo" Classes="m3ToolbarBtn" Command="{Binding RedoCommand}" />
+                            <Button Content="Clear" Classes="m3ToolbarBtn" Command="{Binding ClearCanvasCommand}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,2,12,2">
+                            <ComboBox ItemsSource="{Binding Presets}"
+                                      SelectedItem="{Binding SelectedPreset}"
+                                      Width="148"
+                                      VerticalAlignment="Center"
+                                      CornerRadius="12" />
+                            <ComboBox ItemsSource="{Binding FrameRates}"
+                                      SelectedItem="{Binding SelectedFps}"
+                                      Width="72"
+                                      VerticalAlignment="Center"
+                                      CornerRadius="12"
+                                      ToolTip.Tip="Export frame rate (FPS)" />
+                            <ComboBox ItemsSource="{Binding SpeedOptions}"
+                                      SelectedItem="{Binding SelectedSpeed}"
+                                      Width="76"
+                                      VerticalAlignment="Center"
+                                      CornerRadius="12"
+                                      ToolTip.Tip="Playback &amp; export speed multiplier" />
+                            <CheckBox Content="Trim pauses"
+                                      IsChecked="{Binding CompressIdleGaps}"
+                                      VerticalAlignment="Center"
+                                      Foreground="{StaticResource M3OnSurfaceVariantBrush}"
+                                      ToolTip.Tip="Compress long pauses between strokes on export" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center">
+                            <Button Content="Open" Classes="m3ToolbarBtn" Click="OnOpenClicked" />
+                            <Button Content="Save" Classes="m3ToolbarBtn" Click="OnSaveClicked" />
+                            <Button Content="Ref Image" Classes="m3ToolbarBtn" Click="OnLoadReferenceImageClicked" ToolTip.Tip="Load a reference image file under the drawing (or press Ctrl+V to paste)" />
+                            <Button Content="Clear Ref" Classes="m3ToolbarBtn" Command="{Binding ClearReferenceImageCommand}" IsVisible="{Binding HasReferenceImage}" />
+                        </StackPanel>
+                    </WrapPanel>
+                </Border>
+
+                <!-- Active Mode & Status Pill -->
+                <Border Grid.Column="1"
+                        Classes="m3FloatingPill"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border Background="{StaticResource M3SecondaryContainerBrush}"
+                                CornerRadius="14"
+                                Padding="10,4">
+                            <TextBlock Text="{Binding ActiveModeLabel}"
+                                       Foreground="{StaticResource M3OnSecondaryContainerBrush}"
+                                       FontSize="12"
+                                       FontWeight="Bold" />
+                        </Border>
+                        <TextBlock Text="{Binding StatusText}"
+                                   Foreground="{StaticResource M3OnSurfaceVariantBrush}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   MaxWidth="320"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Blank Transparent Canvas -->
+            <controls:InkCanvas Grid.Row="1"
+                                x:Name="CanvasControl"
+                                Document="{Binding Document}"
+                                ActiveColor="{Binding ActiveColor}"
+                                BaseWidth="{Binding BaseWidth}"
+                                IsEraserMode="{Binding IsEraserMode}"
+                                PenOnlyMode="{Binding PenOnlyMode}"
+                                IsPlaybackActive="{Binding IsPlaybackActive}"
+                                PlaybackTimeMs="{Binding PlaybackTimeMs}"
+                                CompressIdleGaps="{Binding CompressIdleGaps}"
+                                ReferenceImage="{Binding ReferenceImage}"
+                                ReferenceOpacity="{Binding ReferenceOpacity}"
+                                SpeedMultiplier="{Binding SelectedSpeed.Multiplier}" />
+
+            <!-- Bottom Floating Toolbar + Extended FAB -->
+            <Grid Grid.Row="2"
+                  ColumnDefinitions="*,Auto"
+                  Margin="16,4,24,20"
+                  ColumnSpacing="16">
+                <Border Grid.Column="0"
+                        Classes="m3FloatingToolbar"
+                        HorizontalAlignment="Center">
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Connected Mode Button Group (Pen | Eraser) -->
+                        <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,2,10,2" VerticalAlignment="Center">
+                            <Button Content="Pen"
+                                    Classes="m3ConnectedLeft"
+                                    Classes.active="{Binding IsPenMode}"
+                                    Command="{Binding TogglePenToolCommand}" />
+                            <Button Content="Eraser"
+                                    Classes="m3ConnectedRight"
+                                    Classes.active="{Binding IsEraserMode}"
+                                    Command="{Binding ToggleEraserToolCommand}" />
+                        </StackPanel>
+
+                        <!-- Palm Rejection Modifier -->
+                        <ToggleButton Content="Pen only"
+                                      Classes="m3PalmToggle"
+                                      IsChecked="{Binding PenOnlyMode}"
+                                      Margin="0,2,12,2"
+                                      ToolTip.Tip="Ignore finger/palm touch so only stylus (or mouse) draws" />
+
+                        <!-- Color Swatches (44x44dp hit target, tap to select, long-press to customize) -->
+                        <ItemsControl ItemsSource="{Binding Palette}" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ColorSwatch">
+                                    <Border Classes="m3SwatchTarget"
+                                            Cursor="Hand"
+                                            ToolTip.Tip="Tap to select • Long-press or right-click to edit color"
+                                            PointerPressed="OnSwatchPointerPressed"
+                                            PointerMoved="OnSwatchPointerMoved"
+                                            PointerReleased="OnSwatchPointerReleased"
+                                            PointerCaptureLost="OnSwatchPointerCaptureLost">
+                                        <Border Classes="m3SwatchRing"
+                                                Classes.selected="{Binding IsSelected}">
+                                            <Ellipse Fill="{Binding Brush}" />
+                                        </Border>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Brush Size -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,2,14,2">
+                            <TextBlock Text="Size" VerticalAlignment="Center" Foreground="{StaticResource M3OnSurfaceVariantBrush}" FontSize="12" FontWeight="Medium" />
+                            <Slider Minimum="2" Maximum="36" Width="88" Value="{Binding BaseWidth}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding BaseWidth, StringFormat='{}{0:0}px'}"
+                                       VerticalAlignment="Center" Foreground="{StaticResource M3OnSurfaceBrush}" FontSize="12" FontWeight="Bold" Width="34" />
+                        </StackPanel>
+
+                        <!-- Write-On Playback Controls -->
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="0,2,0,2">
+                            <Button Content="Play / Pause" Classes="m3ToolbarBtn" Command="{Binding TogglePlayCommand}" />
+                            <Button Content="Stop" Classes="m3ToolbarBtn" Command="{Binding StopPlaybackCommand}" />
+                            <Slider Minimum="0"
+                                    Maximum="{Binding TotalDurationMs}"
+                                    Value="{Binding PlaybackTimeMs}"
+                                    IsEnabled="{Binding IsPlaybackActive}"
+                                    Width="110"
+                                    VerticalAlignment="Center" />
+                        </StackPanel>
+                    </WrapPanel>
+                </Border>
+
+                <!-- Primary High-Emphasis Action: Extended FAB -->
+                <Button Grid.Column="1"
+                        Content="Export Resolve"
+                        Classes="m3ExtendedFab"
+                        Click="OnExportFusionClicked"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Export animated vector .setting for DaVinci Resolve Fusion" />
+            </Grid>
+        </Grid>
+
+        <!-- M3 Expressive Color Picker Dialog (CornerExtraLarge 28dp) -->
+        <Border IsVisible="{Binding IsColorPickerOpen}"
+                Background="#99000000"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <Border Background="{StaticResource M3SurfaceContainerHighBrush}"
+                    BorderBrush="{StaticResource M3OutlineVariantBrush}"
+                    BorderThickness="1"
+                    CornerRadius="28"
+                    Padding="24"
+                    Width="340"
+                    BoxShadow="0 16 48 0 #99000000"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Customize brush color"
+                               FontSize="22"
+                               LineHeight="28"
+                               FontWeight="Regular"
+                               Foreground="{StaticResource M3OnSurfaceBrush}" />
+
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Ellipse Grid.Column="0"
+                                 Width="52"
+                                 Height="52"
+                                 Fill="{Binding PickerPreviewBrush}"
+                                 Stroke="{StaticResource M3OutlineBrush}"
+                                 StrokeThickness="1.5" />
+                        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                            <TextBlock Text="Hex (#RRGGBB)" FontSize="12" Foreground="{StaticResource M3OnSurfaceVariantBrush}" />
+                            <TextBox Text="{Binding PickerHex}"
+                                     PlaceholderText="#FFFFFF"
+                                     CornerRadius="8" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- R, G, B Sliders -->
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="24,*,36" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="R" Foreground="#F87171" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding PickerRed}" />
+                            <TextBlock Grid.Column="2" Text="{Binding PickerRed, StringFormat='{}{0:0}'}" Foreground="{StaticResource M3OnSurfaceBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                        </Grid>
+                        <Grid ColumnDefinitions="24,*,36" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="G" Foreground="#4ADE80" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding PickerGreen}" />
+                            <TextBlock Grid.Column="2" Text="{Binding PickerGreen, StringFormat='{}{0:0}'}" Foreground="{StaticResource M3OnSurfaceBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                        </Grid>
+                        <Grid ColumnDefinitions="24,*,36" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="B" Foreground="#60A5FA" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding PickerBlue}" />
+                            <TextBlock Grid.Column="2" Text="{Binding PickerBlue, StringFormat='{}{0:0}'}" Foreground="{StaticResource M3OnSurfaceBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                        <Button Content="Cancel" Classes="m3TextBtn" Command="{Binding CancelColorPickerCommand}" />
+                        <Button Content="Save color" Classes="m3FilledBtn" Command="{Binding ApplyColorPickerCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</UserControl>

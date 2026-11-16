@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Project Path="Scribble.Core/Scribble.Core.csproj" />
+  <Project Path="Scribble/Scribble.csproj" />
+  <Project Path="Scribble.Desktop/Scribble.Desktop.csproj" />
+  <Project Path="Scribble.Android/Scribble.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="Scribble.Core.Tests/Scribble.Core.Tests.csproj" />
+</Solution>
