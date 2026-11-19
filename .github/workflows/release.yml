@@ -39,7 +39,7 @@ jobs:
 
       - name: Publish Windows Native AOT
         run: >
-          dotnet publish src/CopperCalzone.Desktop/CopperCalzone.Desktop.csproj
+          dotnet publish Scribble.Desktop/Scribble.Desktop.csproj
           -c Release
           -r win-x64
           -p:PublishAot=true
@@ -51,64 +51,11 @@ jobs:
         run: |
           # Remove PDB symbol files before archiving
           Remove-Item -Path "publish/windows/*.pdb" -Force -ErrorAction SilentlyContinue
-          Compress-Archive -Path "publish/windows/*" -DestinationPath "CopperCalzone-win-x64.zip"
+          Compress-Archive -Path "publish/windows/*" -DestinationPath "Scribble-win-x64.zip"
 
       - name: Upload Windows Assets to GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ needs.release-please.outputs.tag_name }} CopperCalzone-win-x64.zip --clobber
-
-  build-android:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Java JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '11.0.x'
-          dotnet-quality: 'preview'
-
-      - name: Install Android Workload
-        run: dotnet workload install android
-
-      - name: Publish Android APK
-        run: >
-          dotnet publish src/CopperCalzone.Android/CopperCalzone.Android.csproj
-          -c Release
-          -f net11.0-android
-          -p:Version=${{ needs.release-please.outputs.version }}
-          -o publish/android
-
-      - name: Locate and Upload Android APK to GitHub Release
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $apk = Get-ChildItem -Path "publish/android" -Filter "*Signed.apk" | Select-Object -First 1
-          if (-not $apk) {
-            $apk = Get-ChildItem -Path "publish/android" -Filter "*.apk" | Select-Object -First 1
-          }
-          if (-not $apk) {
-            $apk = Get-ChildItem -Recurse -Path "src/CopperCalzone.Android/bin/Release" -Filter "*.apk" | Select-Object -First 1
-          }
-
-          if ($apk) {
-            Write-Host "Found APK at $($apk.FullName)"
-            Copy-Item $apk.FullName -Destination "CopperCalzone.apk"
-            gh release upload ${{ needs.release-please.outputs.tag_name }} CopperCalzone.apk --clobber
-          } else {
-            Write-Error "No APK found in publish output."
-            exit 1
-          }
+          gh release upload ${{ needs.release-please.outputs.tag_name }} Scribble-win-x64.zip --clobber
